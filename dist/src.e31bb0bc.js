@@ -28887,7 +28887,68 @@ var collapseInstructions = function collapseInstructions() {
 };
 
 exports.collapseInstructions = collapseInstructions;
-},{"./types":"actions/types.js"}],"components/App.js":[function(require,module,exports) {
+},{"./types":"actions/types.js"}],"components/Instructions.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _react = _interopRequireDefault(require("react"));
+
+var _reactRedux = require("react-redux");
+
+var _settings = require("../actions/settings");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+// Because need to read from store and dispatch action to store
+var Instructions = function Instructions(props) {
+  // state, dispatch, dispatch
+  var instructionsExpanded = props.instructionsExpanded,
+      expandInstructions = props.expandInstructions,
+      collapseInstructions = props.collapseInstructions;
+
+  if (instructionsExpanded) {
+    return _react.default.createElement("div", null, _react.default.createElement("h3", null, "Instructions"), _react.default.createElement("p", null, "Welcome to evens or odds."), _react.default.createElement("p", null, "The deck is shuffled. You will predict whether the next card will be even or odd."), _react.default.createElement("p", null, "You will gain a point for every card you get right."), _react.default.createElement("p", null, "Face cards will be ommited."), _react.default.createElement("br", null), _react.default.createElement("button", {
+      onClick: collapseInstructions
+    }, "Show less"));
+  }
+
+  return _react.default.createElement("div", null, _react.default.createElement("h3", null, "Instructions"), _react.default.createElement("p", null, "Welcome to evens or odd. The deck is shuffled..."), _react.default.createElement("button", {
+    onClick: expandInstructions
+  }, "Read more"));
+};
+
+var mapDispatchToProps = function mapDispatchToProps(dispatch) {
+  return {
+    expandInstructions: function expandInstructions() {
+      return dispatch((0, _settings.expandInstructions)());
+    },
+    collapseInstructions: function collapseInstructions() {
+      return dispatch((0, _settings.collapseInstructions)());
+    }
+  };
+};
+
+var mapStateToProps = function mapStateToProps(state) {
+  return {
+    instructionsExpanded: state.instructionExpanded
+  };
+};
+
+var componentConnecttor = (0, _reactRedux.connect)(mapStateToProps, mapDispatchToProps);
+
+var _default = componentConnecttor(Instructions); // Refractor:
+// export default connect(
+//     state => ({ instructionsExpanded: state.instructionsExpanded }),
+//     { expandInstructions, collapseInstructions }
+// )(Instructions);
+
+
+exports.default = _default;
+},{"react":"../node_modules/react/index.js","react-redux":"../node_modules/react-redux/es/index.js","../actions/settings":"actions/settings.js"}],"components/App.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -28900,6 +28961,10 @@ var _react = _interopRequireWildcard(require("react"));
 var _reactRedux = require("react-redux");
 
 var _settings = require("../actions/settings");
+
+var _Instructions = _interopRequireDefault(require("./Instructions"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = Object.defineProperty && Object.getOwnPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : {}; if (desc.get || desc.set) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj.default = obj; return newObj; } }
 
@@ -28940,7 +29005,7 @@ function (_Component) {
         onClick: this.props.cancelGame
       }, "I'm not ready yet!")) : _react.default.createElement("div", null, _react.default.createElement("h3", null, "A new game awaits!"), _react.default.createElement("br", null), _react.default.createElement("button", {
         onClick: this.props.startGame
-      }, "Start Game!")));
+      }, "Start Game!"), _react.default.createElement("hr", null), _react.default.createElement(_Instructions.default, null)));
     }
   }]);
 
@@ -28970,7 +29035,7 @@ var componentConnector = (0, _reactRedux.connect)(mapStateToProps, mapDispatchTo
 var _default = componentConnector(App);
 
 exports.default = _default;
-},{"react":"../node_modules/react/index.js","react-redux":"../node_modules/react-redux/es/index.js","../actions/settings":"actions/settings.js"}],"reducers/index.js":[function(require,module,exports) {
+},{"react":"../node_modules/react/index.js","react-redux":"../node_modules/react-redux/es/index.js","../actions/settings":"actions/settings.js","./Instructions":"components/Instructions.js"}],"reducers/index.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
