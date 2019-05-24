@@ -38,7 +38,7 @@ const mapDispatchToProps = dispatch => {
 }
 
 const mapStateToProps = state => {
-    return { instructionsExpanded: state.instructionExpanded };
+    return { instructionsExpanded: state.settings.instructionExpanded };
 }
 
 const componentConnecttor = connect(mapStateToProps, mapDispatchToProps);

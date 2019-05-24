@@ -28831,17 +28831,50 @@ var _reactBatchedUpdates = require("./utils/reactBatchedUpdates");
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 (0, _batch.setBatch)(_reactBatchedUpdates.unstable_batchedUpdates);
-},{"./components/Provider":"../node_modules/react-redux/es/components/Provider.js","./components/connectAdvanced":"../node_modules/react-redux/es/components/connectAdvanced.js","./components/Context":"../node_modules/react-redux/es/components/Context.js","./connect/connect":"../node_modules/react-redux/es/connect/connect.js","./utils/batch":"../node_modules/react-redux/es/utils/batch.js","./utils/reactBatchedUpdates":"../node_modules/react-redux/es/utils/reactBatchedUpdates.js"}],"actions/types.js":[function(require,module,exports) {
+},{"./components/Provider":"../node_modules/react-redux/es/components/Provider.js","./components/connectAdvanced":"../node_modules/react-redux/es/components/connectAdvanced.js","./components/Context":"../node_modules/react-redux/es/components/Context.js","./connect/connect":"../node_modules/react-redux/es/connect/connect.js","./utils/batch":"../node_modules/react-redux/es/utils/batch.js","./utils/reactBatchedUpdates":"../node_modules/react-redux/es/utils/reactBatchedUpdates.js"}],"../node_modules/redux-thunk/es/index.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.SET_INSTRUCTIONS_EXPANDED = exports.SET_GAME_STARTED = void 0;
+exports.default = void 0;
+
+function createThunkMiddleware(extraArgument) {
+  return function (_ref) {
+    var dispatch = _ref.dispatch,
+        getState = _ref.getState;
+    return function (next) {
+      return function (action) {
+        if (typeof action === 'function') {
+          return action(dispatch, getState, extraArgument);
+        }
+
+        return next(action);
+      };
+    };
+  };
+}
+
+var thunk = createThunkMiddleware();
+thunk.withExtraArgument = createThunkMiddleware;
+var _default = thunk;
+exports.default = _default;
+},{}],"actions/types.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.DECK = exports.SET_INSTRUCTIONS_EXPANDED = exports.SET_GAME_STARTED = void 0;
 var SET_GAME_STARTED = 'SET_GAME_STARTED';
 exports.SET_GAME_STARTED = SET_GAME_STARTED;
 var SET_INSTRUCTIONS_EXPANDED = 'SET_INSTRUCTIONS_EXPANDED';
 exports.SET_INSTRUCTIONS_EXPANDED = SET_INSTRUCTIONS_EXPANDED;
+var DECK = {
+  FETCH_SUCCESS: 'DECK_FETCH_SUCCESS',
+  FETCH_ERROR: 'DECK_FETCH_ERROR'
+};
+exports.DECK = DECK;
 },{}],"actions/settings.js":[function(require,module,exports) {
 "use strict";
 
@@ -28887,7 +28920,67 @@ var collapseInstructions = function collapseInstructions() {
 };
 
 exports.collapseInstructions = collapseInstructions;
-},{"./types":"actions/types.js"}],"components/Instructions.js":[function(require,module,exports) {
+},{"./types":"actions/types.js"}],"actions/deck.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.fetchNewDeck = exports.fetchDeckError = exports.fetchDeckSuccess = void 0;
+
+var _types = require("./types");
+
+var fetchDeckSuccess = function fetchDeckSuccess(deckJson) {
+  var remaining = deckJson.remaining,
+      deck_id = deckJson.deck_id;
+  return {
+    type: _types.DECK.FETCH_SUCCESS,
+    remaining: remaining,
+    deck_id: deck_id
+  };
+};
+
+exports.fetchDeckSuccess = fetchDeckSuccess;
+
+var fetchDeckError = function fetchDeckError(error) {
+  return {
+    type: _types.DECK.FETCH_ERROR,
+    message: error.message
+  };
+};
+
+exports.fetchDeckError = fetchDeckError;
+
+var fetchNewDeck = function fetchNewDeck() {
+  return function (dispatch) {
+    return fetch('https://deckofcardsapi.com/api/deck/new/shuffle/?deck_count=1').then(function (response) {
+      if (response.status !== 200) {
+        throw new Error('Unsuccessful request to deckofcard api');
+      }
+
+      return response.json();
+    }).then(function (json) {
+      return dispatch(fetchDeckSuccess(json));
+    }).catch(function (error) {
+      return dispatch(fetchDeckError(error));
+    });
+  };
+};
+
+exports.fetchNewDeck = fetchNewDeck;
+},{"./types":"actions/types.js"}],"reducers/fetchStates.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+var _default = {
+  success: 'success',
+  error: 'error'
+};
+exports.default = _default;
+},{}],"components/Instructions.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -28934,7 +29027,7 @@ var mapDispatchToProps = function mapDispatchToProps(dispatch) {
 
 var mapStateToProps = function mapStateToProps(state) {
   return {
-    instructionsExpanded: state.instructionExpanded
+    instructionsExpanded: state.settings.instructionExpanded
   };
 };
 
@@ -28962,6 +29055,10 @@ var _reactRedux = require("react-redux");
 
 var _settings = require("../actions/settings");
 
+var _deck = require("../actions/deck");
+
+var _fetchStates = _interopRequireDefault(require("../reducers/fetchStates"));
+
 var _Instructions = _interopRequireDefault(require("./Instructions"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -28978,13 +29075,15 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
 function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
 
-function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
-
 function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
 
 function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
 var App =
 /*#__PURE__*/
@@ -28992,19 +29091,40 @@ function (_Component) {
   _inherits(App, _Component);
 
   function App() {
+    var _getPrototypeOf2;
+
+    var _this;
+
     _classCallCheck(this, App);
 
-    return _possibleConstructorReturn(this, _getPrototypeOf(App).apply(this, arguments));
+    for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+      args[_key] = arguments[_key];
+    }
+
+    _this = _possibleConstructorReturn(this, (_getPrototypeOf2 = _getPrototypeOf(App)).call.apply(_getPrototypeOf2, [this].concat(args)));
+
+    _defineProperty(_assertThisInitialized(_this), "startGame", function () {
+      _this.props.startGame();
+
+      _this.props.fetchNewDeck();
+    });
+
+    return _this;
   }
 
   _createClass(App, [{
     key: "render",
     value: function render() {
       console.log('this', this);
+
+      if (this.props.fetchState === _fetchStates.default.error) {
+        return _react.default.createElement("div", null, _react.default.createElement("p", null, "Please reload the app."), _react.default.createElement("p", null, this.props.message));
+      }
+
       return _react.default.createElement("div", null, _react.default.createElement("h2", null, "\u2660\uFE0F \u2666\uFE0F Evens or Odds \u2665\uFE0F \u2663\uFE0F"), this.props.gameStarted ? _react.default.createElement("div", null, _react.default.createElement("h3", null, "The game is on!"), _react.default.createElement("br", null), _react.default.createElement("button", {
         onClick: this.props.cancelGame
-      }, "I'm not ready yet!")) : _react.default.createElement("div", null, _react.default.createElement("h3", null, "A new game awaits!"), _react.default.createElement("br", null), _react.default.createElement("button", {
-        onClick: this.props.startGame
+      }, "Abort! Abort!")) : _react.default.createElement("div", null, _react.default.createElement("h3", null, "A new game awaits!"), _react.default.createElement("br", null), _react.default.createElement("button", {
+        onClick: this.startGame
       }, "Start Game!"), _react.default.createElement("hr", null), _react.default.createElement(_Instructions.default, null)));
     }
   }]);
@@ -29015,27 +29135,39 @@ function (_Component) {
 var mapStateToProps = function mapStateToProps(state) {
   console.log('state', state);
   return {
-    gameStarted: state.gameStarted
+    gameStarted: state.settings.gameStarted,
+    fetchState: state.deck.fetchState,
+    message: state.deck.message
   };
-};
+}; // 'dispatch' is a method
+// const mapDispatchToProps = dispatch => {
+//     return {
+//         startGame: () => dispatch(startGame()),
+//         cancelGame: () => dispatch(cancelGame()),
+//         fetchNewDeck: () => fetchNewDeck(dispatch)
+//     };
+// }
+// const componentConnector = connect(mapStateToProps, mapDispatchToProps);
 
-var mapDispatchToProps = function mapDispatchToProps(dispatch) {
-  return {
-    startGame: function startGame() {
-      return dispatch((0, _settings.startGame)());
-    },
-    cancelGame: function cancelGame() {
-      return dispatch((0, _settings.cancelGame)());
-    }
-  };
-};
 
-var componentConnector = (0, _reactRedux.connect)(mapStateToProps, mapDispatchToProps);
+var componentConnector = (0, _reactRedux.connect)(mapStateToProps, {
+  startGame: _settings.startGame,
+  cancelGame: _settings.cancelGame,
+  fetchNewDeck: _deck.fetchNewDeck
+});
 
-var _default = componentConnector(App);
+var _default = componentConnector(App); // // These are equal:
+// const { gameStarted } = state.settings;
+// const { fetchState, message } =  state.deck;
+// // and
+// const {
+//     settings: { gameStarted },
+//     deck: { fetchState, message }
+// } = state;
+
 
 exports.default = _default;
-},{"react":"../node_modules/react/index.js","react-redux":"../node_modules/react-redux/es/index.js","../actions/settings":"actions/settings.js","./Instructions":"components/Instructions.js"}],"reducers/index.js":[function(require,module,exports) {
+},{"react":"../node_modules/react/index.js","react-redux":"../node_modules/react-redux/es/index.js","../actions/settings":"actions/settings.js","../actions/deck":"actions/deck.js","../reducers/fetchStates":"reducers/fetchStates.js","./Instructions":"components/Instructions.js"}],"reducers/settings.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -29054,7 +29186,7 @@ var DEFAULT_SETTINGS = {
   instructionExpanded: false
 };
 
-var rootReducer = function rootReducer() {
+var settingsReducer = function settingsReducer() {
   var state = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : DEFAULT_SETTINGS;
   var action = arguments.length > 1 ? arguments[1] : undefined;
   console.log('state', state, 'action', action);
@@ -29075,9 +29207,129 @@ var rootReducer = function rootReducer() {
   }
 };
 
-var _default = rootReducer;
+var _default = settingsReducer;
 exports.default = _default;
-},{"../actions/types":"actions/types.js"}],"../node_modules/parcel-bundler/src/builtins/bundle-url.js":[function(require,module,exports) {
+},{"../actions/types":"actions/types.js"}],"reducers/deck.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _types = require("../actions/types");
+
+var _fetchStates = _interopRequireDefault(require("./fetchStates"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; var ownKeys = Object.keys(source); if (typeof Object.getOwnPropertySymbols === 'function') { ownKeys = ownKeys.concat(Object.getOwnPropertySymbols(source).filter(function (sym) { return Object.getOwnPropertyDescriptor(source, sym).enumerable; })); } ownKeys.forEach(function (key) { _defineProperty(target, key, source[key]); }); } return target; }
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
+var DEFAULT_DECK = {
+  deck_id: '',
+  remaining: 0,
+  fetchState: '',
+  message: ''
+};
+
+var deckReducer = function deckReducer() {
+  var state = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : DEFAULT_DECK;
+  var action = arguments.length > 1 ? arguments[1] : undefined;
+  console.log('state', state, 'action', action);
+
+  switch (action.type) {
+    case _types.DECK.FETCH_SUCCESS:
+      var remaining = action.remaining,
+          deck_id = action.deck_id;
+      return _objectSpread({}, state, {
+        remaining: remaining,
+        deck_id: deck_id,
+        fetchState: _fetchStates.default.success
+      });
+
+    case _types.DECK.FETCH_ERROR:
+      return _objectSpread({}, state, {
+        message: action.message,
+        fetchState: _fetchStates.default.error
+      });
+
+    default:
+      return state;
+  }
+};
+
+var _default = deckReducer;
+exports.default = _default;
+},{"../actions/types":"actions/types.js","./fetchStates":"reducers/fetchStates.js"}],"reducers/index.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _redux = require("redux");
+
+var _settings = _interopRequireDefault(require("./settings"));
+
+var _deck = _interopRequireDefault(require("./deck"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var _default = (0, _redux.combineReducers)({
+  settings: _settings.default,
+  deck: _deck.default
+}); // import { 
+//     SET_GAME_STARTED, 
+//     SET_INSTRUCTIONS_EXPANDED, 
+//     DECK
+// } from '../actions/types';
+// import fetchStates from './fetchStates';
+// const DEFAULT_SETTINGS = {
+//     gameStarted: false,
+//     instructionExpanded: false
+// }
+// const rootReducer = (state = DEFAULT_SETTINGS, action) => {
+//     console.log('state', state, 'action', action);
+//     switch(action.type) {
+//         case SET_GAME_STARTED:
+//             return {
+//                 ...state,
+//                 gameStarted: action.gameStarted
+//             };
+//         case SET_INSTRUCTIONS_EXPANDED:
+//             return {
+//                 // gameStarted: state.gameStarted,
+//                 // instructionExpanded : state.instructionExpanded
+//                 // 2 lines above are same with '...state'
+//                 ...state,
+//                 instructionExpanded : action.instructionExpanded
+//             };
+//         case DECK.FETCH_SUCCESS:
+//             const { remaining, deck_id } = action;
+//             return {
+//                 ...state,
+//                 remaining,
+//                 deck_id,
+//                 fetchState: fetchStates.success
+//             };
+//         case DECK.FETCH_ERROR:
+//             return {
+//                 ...state,
+//                 message: action.message,
+//                 fetchState: fetchStates.error
+//             };
+//         default:
+//             return state;
+//     }   
+// };
+// export default rootReducer;
+
+
+exports.default = _default;
+},{"redux":"../node_modules/redux/es/redux.js","./settings":"reducers/settings.js","./deck":"reducers/deck.js"}],"../node_modules/parcel-bundler/src/builtins/bundle-url.js":[function(require,module,exports) {
 var bundleURL = null;
 
 function getBundleURLCached() {
@@ -29160,6 +29412,8 @@ var _redux = require("redux");
 
 var _reactRedux = require("react-redux");
 
+var _reduxThunk = _interopRequireDefault(require("redux-thunk"));
+
 var _App = _interopRequireDefault(require("./components/App"));
 
 var _reducers = _interopRequireDefault(require("./reducers"));
@@ -29168,7 +29422,7 @@ require("./index.css");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var store = (0, _redux.createStore)(_reducers.default);
+var store = (0, _redux.createStore)(_reducers.default, (0, _redux.applyMiddleware)(_reduxThunk.default));
 console.log('store', store);
 console.log('store.getState()', store.getState());
 store.subscribe(function () {
@@ -29225,7 +29479,7 @@ _reactDom.default.render(_react.default.createElement(_reactRedux.Provider, {
 // store.dispatch(cancelInstructions());
 // ReactDOM.render(<App />, document.getElementById('root')
 // );
-},{"react":"../node_modules/react/index.js","react-dom":"../node_modules/react-dom/index.js","redux":"../node_modules/redux/es/redux.js","react-redux":"../node_modules/react-redux/es/index.js","./components/App":"components/App.js","./reducers":"reducers/index.js","./index.css":"index.css"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"react":"../node_modules/react/index.js","react-dom":"../node_modules/react-dom/index.js","redux":"../node_modules/redux/es/redux.js","react-redux":"../node_modules/react-redux/es/index.js","redux-thunk":"../node_modules/redux-thunk/es/index.js","./components/App":"components/App.js","./reducers":"reducers/index.js","./index.css":"index.css"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -29253,7 +29507,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "60458" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "53704" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
