@@ -28865,16 +28865,23 @@ exports.default = _default;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.DECK = exports.SET_INSTRUCTIONS_EXPANDED = exports.SET_GAME_STARTED = void 0;
+exports.DECK_DRAW = exports.DECK = exports.SET_GUESS = exports.SET_INSTRUCTIONS_EXPANDED = exports.SET_GAME_STARTED = void 0;
 var SET_GAME_STARTED = 'SET_GAME_STARTED';
 exports.SET_GAME_STARTED = SET_GAME_STARTED;
 var SET_INSTRUCTIONS_EXPANDED = 'SET_INSTRUCTIONS_EXPANDED';
 exports.SET_INSTRUCTIONS_EXPANDED = SET_INSTRUCTIONS_EXPANDED;
+var SET_GUESS = 'SET_GUESS';
+exports.SET_GUESS = SET_GUESS;
 var DECK = {
   FETCH_SUCCESS: 'DECK_FETCH_SUCCESS',
   FETCH_ERROR: 'DECK_FETCH_ERROR'
 };
 exports.DECK = DECK;
+var DECK_DRAW = {
+  FETCH_SUCCESS: 'DECK_DRAW_FETCH_SUCCESS',
+  FETCH_ERROR: 'DECK_DRAW_FETCH_SUCCESS'
+};
+exports.DECK_DRAW = DECK_DRAW;
 },{}],"actions/settings.js":[function(require,module,exports) {
 "use strict";
 
@@ -28926,10 +28933,12 @@ exports.collapseInstructions = collapseInstructions;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.fetchNewDeck = exports.fetchDeckError = exports.fetchDeckSuccess = void 0;
+exports.fetchDrawCard = exports.fetchNewDeck = exports.fetchDeckError = exports.fetchDeckSuccess = void 0;
 
 var _types = require("./types");
 
+// Import Types
+// Each actions to be dispatch have to be accompany by 'type' 
 var fetchDeckSuccess = function fetchDeckSuccess(deckJson) {
   var remaining = deckJson.remaining,
       deck_id = deckJson.deck_id;
@@ -28947,7 +28956,8 @@ var fetchDeckError = function fetchDeckError(error) {
     type: _types.DECK.FETCH_ERROR,
     message: error.message
   };
-};
+}; // Use double arrow functions so that thunk could work
+
 
 exports.fetchDeckError = fetchDeckError;
 
@@ -28965,9 +28975,35 @@ var fetchNewDeck = function fetchNewDeck() {
       return dispatch(fetchDeckError(error));
     });
   };
-};
+}; // Use double arrow functions so that thunk could work
+
 
 exports.fetchNewDeck = fetchNewDeck;
+
+var fetchDrawCard = function fetchDrawCard(deck_id) {
+  return function (dispatch) {
+    return fetch("https://deckofcardsapi.com/api/deck/".concat(deck_id, "/draw/?count=1")).then(function (response) {
+      if (response.status !== 200) {
+        throw new Error('Unsuccessful reques to deck of card api');
+      }
+
+      return response.json();
+    }).then(function (json) {
+      dispatch({
+        type: _types.DECK_DRAW.FETCH_SUCCESS,
+        cards: json.cards,
+        remaining: json.remaining
+      });
+    }).catch(function (error) {
+      return dispatch({
+        type: _types.DECK_DRAW.FETCH_ERROR,
+        message: error.message
+      });
+    });
+  };
+};
+
+exports.fetchDrawCard = fetchDrawCard;
 },{"./types":"actions/types.js"}],"reducers/fetchStates.js":[function(require,module,exports) {
 "use strict";
 
@@ -29041,7 +29077,93 @@ var _default = componentConnecttor(Instructions); // Refractor:
 
 
 exports.default = _default;
-},{"react":"../node_modules/react/index.js","react-redux":"../node_modules/react-redux/es/index.js","../actions/settings":"actions/settings.js"}],"components/App.js":[function(require,module,exports) {
+},{"react":"../node_modules/react/index.js","react-redux":"../node_modules/react-redux/es/index.js","../actions/settings":"actions/settings.js"}],"components/DrawCard.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _react = _interopRequireDefault(require("react"));
+
+var _reactRedux = require("react-redux");
+
+var _deck = require("../actions/deck");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var DrawCard = function DrawCard(props) {
+  console.log('DrawCard props', props);
+  var deck_id = props.deck_id,
+      fetchDrawCard = props.fetchDrawCard;
+  return _react.default.createElement("div", null, _react.default.createElement("button", {
+    onClick: fetchDrawCard(deck_id)
+  }, "Draw more card!"));
+};
+
+var mapStateToProps = function mapStateToProps(state) {
+  return {
+    deck_id: state.deck.deck_id
+  };
+};
+
+var mapDispatchToProps = function mapDispatchToProps(dispatch) {
+  return {
+    // This format is used because the inline jsx fetchDrawCard call is passing the 'deck_id' parameter
+    fetchDrawCard: function fetchDrawCard(deck_id) {
+      return function () {
+        return dispatch((0, _deck.fetchDrawCard)(deck_id));
+      };
+    }
+  };
+};
+
+var componentConnector = (0, _reactRedux.connect)(mapStateToProps, mapDispatchToProps);
+
+var _default = componentConnector(DrawCard);
+
+exports.default = _default;
+},{"react":"../node_modules/react/index.js","react-redux":"../node_modules/react-redux/es/index.js","../actions/deck":"actions/deck.js"}],"components/Card.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _react = _interopRequireDefault(require("react"));
+
+var _reactRedux = require("react-redux");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var Card = function Card(props) {
+  // If card[0] is not undefined
+  if (!props.cards[0]) return null; // Current drawn card
+
+  var _props$cards$ = props.cards[0],
+      value = _props$cards$.value,
+      suit = _props$cards$.suit,
+      image = _props$cards$.image;
+  return _react.default.createElement("div", null, _react.default.createElement("h3", null, value, " of ", suit), _react.default.createElement("img", {
+    src: image,
+    alt: "card-image"
+  }));
+};
+
+var mapStateToProps = function mapStateToProps(state) {
+  return {
+    cards: state.deck.cards
+  };
+};
+
+var componentConnector = (0, _reactRedux.connect)(mapStateToProps);
+
+var _default = componentConnector(Card);
+
+exports.default = _default;
+},{"react":"../node_modules/react/index.js","react-redux":"../node_modules/react-redux/es/index.js"}],"components/App.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -29060,6 +29182,10 @@ var _deck = require("../actions/deck");
 var _fetchStates = _interopRequireDefault(require("../reducers/fetchStates"));
 
 var _Instructions = _interopRequireDefault(require("./Instructions"));
+
+var _DrawCard = _interopRequireDefault(require("./DrawCard"));
+
+var _Card = _interopRequireDefault(require("./Card"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -29121,7 +29247,7 @@ function (_Component) {
         return _react.default.createElement("div", null, _react.default.createElement("p", null, "Please reload the app."), _react.default.createElement("p", null, this.props.message));
       }
 
-      return _react.default.createElement("div", null, _react.default.createElement("h2", null, "\u2660\uFE0F \u2666\uFE0F Evens or Odds \u2665\uFE0F \u2663\uFE0F"), this.props.gameStarted ? _react.default.createElement("div", null, _react.default.createElement("h3", null, "The game is on!"), _react.default.createElement("br", null), _react.default.createElement("button", {
+      return _react.default.createElement("div", null, _react.default.createElement("h2", null, "\u2660\uFE0F \u2666\uFE0F Evens or Odds \u2665\uFE0F \u2663\uFE0F"), this.props.gameStarted ? _react.default.createElement("div", null, _react.default.createElement("h3", null, "The game is on!"), _react.default.createElement("br", null), _react.default.createElement(_DrawCard.default, null), _react.default.createElement("hr", null), _react.default.createElement(_Card.default, null), _react.default.createElement("hr", null), _react.default.createElement("button", {
         onClick: this.props.cancelGame
       }, "Abort! Abort!")) : _react.default.createElement("div", null, _react.default.createElement("h3", null, "A new game awaits!"), _react.default.createElement("br", null), _react.default.createElement("button", {
         onClick: this.startGame
@@ -29167,7 +29293,7 @@ var _default = componentConnector(App); // // These are equal:
 
 
 exports.default = _default;
-},{"react":"../node_modules/react/index.js","react-redux":"../node_modules/react-redux/es/index.js","../actions/settings":"actions/settings.js","../actions/deck":"actions/deck.js","../reducers/fetchStates":"reducers/fetchStates.js","./Instructions":"components/Instructions.js"}],"reducers/settings.js":[function(require,module,exports) {
+},{"react":"../node_modules/react/index.js","react-redux":"../node_modules/react-redux/es/index.js","../actions/settings":"actions/settings.js","../actions/deck":"actions/deck.js","../reducers/fetchStates":"reducers/fetchStates.js","./Instructions":"components/Instructions.js","./DrawCard":"components/DrawCard.js","./Card":"components/Card.js"}],"reducers/settings.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -29227,22 +29353,26 @@ function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { va
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
+// Default state
 var DEFAULT_DECK = {
   deck_id: '',
   remaining: 0,
   fetchState: '',
-  message: ''
+  message: '',
+  cards: []
 };
 
 var deckReducer = function deckReducer() {
   var state = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : DEFAULT_DECK;
   var action = arguments.length > 1 ? arguments[1] : undefined;
-  console.log('state', state, 'action', action);
+  console.log('deck state', state, 'action', action); // Fixed the variables declared more than once
+
+  var remaining, deck_id, cards;
 
   switch (action.type) {
     case _types.DECK.FETCH_SUCCESS:
-      var remaining = action.remaining,
-          deck_id = action.deck_id;
+      remaining = action.remaining;
+      deck_id = action.deck_id;
       return _objectSpread({}, state, {
         remaining: remaining,
         deck_id: deck_id,
@@ -29250,6 +29380,21 @@ var deckReducer = function deckReducer() {
       });
 
     case _types.DECK.FETCH_ERROR:
+      return _objectSpread({}, state, {
+        message: action.message,
+        fetchState: _fetchStates.default.error
+      });
+
+    case _types.DECK_DRAW.FETCH_SUCCESS:
+      cards = action.cards;
+      remaining = action.remaining;
+      return _objectSpread({}, state, {
+        cards: cards,
+        remaining: remaining,
+        fetchState: _fetchStates.default.success
+      });
+
+    case _types.DECK_DRAW.FETCH_ERROR:
       return _objectSpread({}, state, {
         message: action.message,
         fetchState: _fetchStates.default.error

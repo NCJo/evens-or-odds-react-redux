@@ -5,6 +5,8 @@ import { startGame, cancelGame } from '../actions/settings';
 import { fetchNewDeck } from '../actions/deck';
 import fetchStates from '../reducers/fetchStates';
 import Instructions from './Instructions';
+import DrawCard from './DrawCard';
+import Card from './Card';
 
 
 class App extends Component {
@@ -34,6 +36,10 @@ class App extends Component {
                         <div>
                             <h3>The game is on!</h3>
                             <br />
+                            <DrawCard />
+                            <hr />
+                            <Card />
+                            <hr />
                             <button onClick={this.props.cancelGame}>Abort! Abort!</button>
                         </div>
                     ) : (
@@ -77,6 +83,20 @@ const componentConnector = connect(
     );
 
 export default componentConnector(App);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 // // These are equal:
