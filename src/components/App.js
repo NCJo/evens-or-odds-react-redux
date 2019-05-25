@@ -7,6 +7,8 @@ import fetchStates from '../reducers/fetchStates';
 import Instructions from './Instructions';
 import DrawCard from './DrawCard';
 import Card from './Card';
+import Guess from './Guess';
+import GameState from './GameState';
 
 
 class App extends Component {
@@ -35,6 +37,9 @@ class App extends Component {
                     this.props.gameStarted ? (
                         <div>
                             <h3>The game is on!</h3>
+                            <GameState />
+                            <br />
+                            <Guess />
                             <br />
                             <DrawCard />
                             <hr />
